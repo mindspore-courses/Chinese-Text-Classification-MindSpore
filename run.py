@@ -6,6 +6,15 @@ from train_eval import train, init_network
 from importlib import import_module
 import mindspore.ops as ops 
 import argparse
+import mindspore.nn as nn
+
+class MyNet(nn.Cell):
+  def __init__(self):
+    super(MyNet, self).__init__()
+
+# The following implements mindspore.nn.Cell.get_parameters() with MindSpore.
+net = MyNet()
+
 
 parser = argparse.ArgumentParser(description='Chinese Text Classification')
 parser.add_argument('--model', type=str, required=True, help='choose a model: TextCNN, TextRNN, FastText, TextRCNN, TextRNN_Att, DPCNN, Transformer')
@@ -43,8 +52,9 @@ if __name__ == '__main__':
 
     # train
     config.n_vocab = len(vocab)
-    model = x.Model(config).to(config.device)
+    model = x.Model(config)
     if model_name != 'Transformer':
         init_network(model)
-    print(model.parameters)
+        for params in  net.get_parameters():
+           print("params:", params)
     train(config, model, train_iter, dev_iter, test_iter)

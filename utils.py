@@ -71,7 +71,7 @@ def build_dataset(config, ues_word):
     return vocab, train, dev, test
 
 class DatasetIterater(object):
-    def __init__(self, batches, batch_size, device):
+    def __init__(self, batches, batch_size):
         self.batch_size = batch_size
         self.batches = batches
         self.n_batches = len(batches) // batch_size
@@ -79,14 +79,13 @@ class DatasetIterater(object):
         if len(batches) % self.n_batches != 0:
             self.residue = True
         self.index = 0
-        self.device = device
 
     def _to_tensor(self, datas):
-        x = Tensor.long([_[0] for _ in datas]).to(self.device)
-        y = Tensor.long([_[1] for _ in datas]).to(self.device)
+        x = Tensor.long([_[0] for _ in datas])
+        y = Tensor.long([_[1] for _ in datas])
 
         # pad前的长度(超过pad_size的设为pad_size)
-        seq_len = Tensor.long([_[2] for _ in datas]).to(self.device)
+        seq_len = Tensor.long([_[2] for _ in datas])
         return (x, seq_len), y
 
     def __next__(self):
@@ -115,7 +114,7 @@ class DatasetIterater(object):
             return self.n_batches
         
 def build_iterator(dataset, config):
-    iter = DatasetIterater(dataset, config.batch_size, config.device)
+    iter = DatasetIterater(dataset, config.batch_size)
     return iter
 
 

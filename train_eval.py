@@ -9,11 +9,16 @@ from utils import get_time_dif
 from mindspore.common.initializer import initializer, XavierNormal, Normal, HeNormal, Constant
 from mindspore.train import Model, CheckpointConfig, ModelCheckpoint, LossMonitor
 
+class MyNet(nn.Cell):
+  def __init__(self):
+    super(MyNet, self).__init__()
 
+# The following implements mindspore.nn.Cell.get_parameters() with MindSpore.
+net = MyNet()
 
 # 权重初始化，默认xavier
 def init_network(model, method='xavier', exclude='embedding', seed=123):
-    for name, w in model.named_parameters():
+    for name, w in net.trainable_params():
         if exclude not in name:
             if 'weight' in name:
                 if method == 'xavier':
@@ -30,8 +35,8 @@ def init_network(model, method='xavier', exclude='embedding', seed=123):
 
 def train(config, model, train_iter, dev_iter, test_iter):
     start_time = time.time()
-    model.train()
-    optimizer = nn.Adam(model.parameters(), lr=config.learning_rate)
+    model = Model(net)
+    optimizer = nn.Adam(net.trainable_params(), learning_rate=0.001)
 
     # 学习率指数衰减，每次epoch：学习率 = gamma * 学习率
     # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
