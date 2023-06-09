@@ -2,6 +2,8 @@
 import mindspore
 import mindspore.nn as nn
 import numpy as np
+from mindspore import Tensor
+from mindspore.common.initializer import initializer, Normal
 
 
 class Config(object):
@@ -29,20 +31,32 @@ class Config(object):
         self.batch_size = 128                                           # mini-batch大小
         self.pad_size = 32                                              # 每句话处理成的长度(短填长切)
         self.learning_rate = 1e-3                                       # 学习率
-        self.embed = self.embedding_pretrained.size(1)\
-            if self.embedding_pretrained is not None else 300           # 字向量维度, 若使用了预训练词向量，则维度统一
+        # self.embed = self.embedding_pretrained.size(1) if self.embedding_pretrained is not None else 300           # 字向量维度, 若使用了预训练词向量，则维度统一
+        self.embed = 300
         self.hidden_size = 128                                          # lstm隐藏层
         self.num_layers = 2                                             # lstm层数
 
 
 '''Recurrent Neural Network for Text Classification with Multi-Task Learning'''
 
+class Embedding(nn.Embedding):
+    def __init__(self, vocab_size, embedding_size, use_one_hot=False, embedding_table='normal', dtype=mindspore.float32, padding_idx=None):
+        if embedding_table == 'normal':
+            embedding_table = Normal(1.0)
+        super().__init__(vocab_size, embedding_size, use_one_hot, embedding_table, dtype, padding_idx)
+    @classmethod
+    def from_pretrained_embedding(cls, embeddings:Tensor, freeze=True, padding_idx=None):
+        rows, cols = embeddings.shape
+        embedding = cls(rows, cols, embedding_table=embeddings, padding_idx=padding_idx)
+        embedding.embedding_table.requires_grad = not freeze
+        return embedding
+    
 
 class Model(nn.Cell):
     def __init__(self, config):
         super(Model, self).__init__()
         if config.embedding_pretrained is not None:
-            self.embedding = nn.Embedding.from_pretrained(config.embedding_pretrained, freeze=False)
+            self.embedding = Embedding.from_pretrained_embedding(config.embedding_pretrained, freeze=False)
         else:
             self.embedding = nn.Embedding(config.n_vocab, config.embed, padding_idx=config.n_vocab - 1)
         self.lstm = nn.LSTM(config.embed, config.hidden_size, config.num_layers,
